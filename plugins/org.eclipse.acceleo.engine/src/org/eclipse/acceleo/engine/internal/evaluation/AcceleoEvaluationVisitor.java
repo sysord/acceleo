@@ -965,13 +965,24 @@ public class AcceleoEvaluationVisitor<PK, C, O, P, EL, PM, S, COA, SSA, CT, CLS,
 			final Object result = getVisitor().visitExpression((OCLExpression<C>)actualTemplate);
 			delegateAppend(toString(result), actualTemplate, lastEObjectSelfValue, false);
 		} finally {
+
 			// restore parameters as they were prior to the call
+
+			// Remove all Temporary invocation args even if actualTemplate is an empty template
+			// Use invocation arguments count because when guard is false, actualTemplate is
+			// an empty template (without parameters) and temporary invocation args are not removed.
+			// this causes error on next template invocation.
+			int argumentCount = invocation.getArgument().size();
+			for (int i = 0; i < argumentCount; i++) {
+				getEvaluationEnvironment().remove(TEMPORARY_INVOCATION_ARG_PREFIX + i);
+			}
+
 			for (int i = 0; i < actualTemplate.getParameter().size(); i++) {
 				final Variable param = actualTemplate.getParameter().get(i);
 				param.setInitExpression(null);
 				getEvaluationEnvironment().remove(param.getName());
-				getEvaluationEnvironment().remove(TEMPORARY_INVOCATION_ARG_PREFIX + i);
 			}
+
 			// [255379] restore self if need be
 			if (actualTemplate.getParameter().size() > 0) {
 				getEvaluationEnvironment().remove(SELF_VARIABLE_NAME);
